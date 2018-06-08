@@ -1,17 +1,17 @@
 -- This file was automatically generated for the LuaDist project.
 
 package = "netfoxpack"
-version = "0.1.1-1"
+version = "0.1.2-1"
 
 -- LuaDist source
 source = {
-  tag = "0.1.1-1",
+  tag = "0.1.2-1",
   url = "git://github.com/LuaDist-testing/netfoxpack.git"
 }
 -- Original source
 -- source = {
 --   url = "git://github.com/reasonMix/netfoxpack.git",
---   tag = "v0.1.1"
+--   tag = "v0.1.2"
 -- }
 description={
    summary = 'the netfox package the data',
