@@ -9,7 +9,7 @@ const unsigned int  g_dwDelta = 0xA55AA55A;
 #define SOCKET_VER 0x66
 
 //Decrypt
-static void DecryptTEA(int *dwFirstChunk, int *dwSecondChunk)
+static void DecryptTEA(unsigned int *dwFirstChunk,unsigned int *dwSecondChunk)
 {
 	const unsigned int *dwXorKey = (unsigned int*)Key_Value;
 	unsigned int sum = 0;
@@ -31,13 +31,18 @@ static void DecryptTEA(int *dwFirstChunk, int *dwSecondChunk)
 	*dwSecondChunk = z;
 }
 
+
 //Encrypt
 static void EncryptTEA(unsigned int *dwFirstChunk, unsigned int *dwSecondChunk)
 {
+#if __GNUC__ >= 5
+	rand(); 
+#endif
 	unsigned int y = *dwFirstChunk;
 	unsigned int z = *dwSecondChunk;
 	unsigned int sum = 0;
 	int i;
+
 
 	unsigned int *key = (unsigned int *)"ABcde34gdbbddddd";
 
@@ -50,8 +55,8 @@ static void EncryptTEA(unsigned int *dwFirstChunk, unsigned int *dwSecondChunk)
 		z += ((y << 4) + key[2]) ^ (y + sum) ^ ((y >> 5) + key[3]);
 	}
 
-	*dwFirstChunk = y;
 	*dwSecondChunk = z;
+	*dwFirstChunk = y;
 }
 
 //Decrypt
@@ -60,7 +65,7 @@ static void DecryptBuffer(unsigned char* pBuffer, unsigned short wDataSize)
 	unsigned char *p = pBuffer;
 	while (p < pBuffer + wDataSize)
 	{
-		DecryptTEA((int *)p, (int *)(p + sizeof(int)));
+		DecryptTEA((unsigned int *)p, (unsigned int *)(p + sizeof(unsigned int)));
 		p += sizeof(unsigned int) * 2;
 	}
 }
@@ -235,8 +240,6 @@ _retry:
 		ok = 1;
 	}
 	readSize = read_bytes - big;
-  //printf("total_size is %d\r\n",total_size);
-  //printf("self->_currentReadSize is %d\r\n",self->_currentReadSize);
 	memcpy(self->_readBuffer + self->_currentReadSize,buf + total_size,readSize);
 	total_size += readSize;
 	self->_currentReadSize += readSize;
@@ -282,7 +285,12 @@ static int netfox_createPackage(lua_State* L) {
   pHeader->CmdInfo.cbVersion = SOCKET_VER;
   pHeader->CmdInfo.wPacketSize = sizeof(CMD_Head) + size;
   pHeader->CmdInfo.cbCheckCode = 0x02;
-  EncryptBuffer((unsigned char*)pHeader, sizeof(CMD_Head));
+
+// printf("pre size is %d\r\n",pHeader->CmdInfo.wPacketSize);
+ EncryptBuffer((unsigned char*)pHeader, sizeof(CMD_Head));
+// printf("encrypt pre size is %d\r\n",pHeader->CmdInfo.wPacketSize);
+// DecryptBuffer((unsigned char*)pHeader, sizeof(CMD_Head));
+// printf("post size is %d\r\n",pHeader->CmdInfo.wPacketSize);
 
   if (size > 0)
   {
@@ -291,6 +299,8 @@ static int netfox_createPackage(lua_State* L) {
 
   int wSendSize = sizeof(CMD_Head) + size;
   lua_pushlstring(L,buffer,wSendSize);
+  DecryptBuffer((unsigned char*)pHeader,sizeof(CMD_Head));
+
   free(buffer);
 
   return 1;
